@@ -5,7 +5,7 @@
 :- dynamic amigo/2.
 :- dynamic enemigo/2.
 :- dynamic familia/2.
-:- dynamic esta_en/2.
+:- dynamic organizacion/2.
 :- dynamic tiene_rango/2.
 
 :- discontiguous fruta_libre/1.
@@ -18,8 +18,6 @@ personaje_fuerte(Personaje) :-
         )
     ;   format('El personaje ~w no tiene recompensa registrada.~n', [Personaje])
     ).
-
-
 
 tiene_fruta(Personaje) :-
     (   personaje(Personaje, Estado, _) ->
@@ -40,220 +38,368 @@ tiene_fruta(Personaje) :-
 
 
 
+% fruta ocupada: existe usuario vivo para esa fruta
 fruta_ocupada(Fruta) :-
     fruta(Fruta, _, Usuario),
     personaje(Usuario, "vivo", _).
 
+% fruta libre: existe pero no tiene usuario vivo
 fruta_libre(Fruta) :-
-    fruta(Fruta, _, _),           % Existe la fruta
-    \+ fruta_ocupada(Fruta).      % No hay usuario vivo
+    fruta(Fruta, _, _),
+    \+ fruta_ocupada(Fruta).
 
-frutas_ocupadas(Fruta) :-
-    fruta(Fruta, _, Usuario),
-    fruta_ocupada(Fruta).
-
-frutas_libres(Fruta) :-
-    fruta(Fruta, _, Usuario),
-    fruta_libre(Fruta).
-
-lista_frutas_ocupadas(L):-
-    setof(Fruta, frutas_ocupadas(Fruta), L).
-
-lista_frutas_libres(L):-
-    setof(Fruta, frutas_libres(Fruta), L).
-
+% mostrar lista verticalmente
+mostrar_lista([]).
 mostrar_lista([H|T]) :-
-    format('F = ~w~n', [H]),
+    format('~w~n', [H]),
     mostrar_lista(T).
 
+% mostrar frutas ocupadas
 mostrar_frutas_ocupadas :-
-    lista_frutas_ocupadas(Lista),
+    setof(Fruta, fruta_ocupada(Fruta), Lista),
     mostrar_lista(Lista).
 
+% mostrar frutas libres
 mostrar_frutas_libres :-
-    lista_frutas_libres(Lista),
+    setof(Fruta, fruta_libre(Fruta), Lista),
     mostrar_lista(Lista).
 
-% fruta_libre(NombreFruta).
-fruta_libre(Fruta) :- fruta(Fruta, _, _, libre).
+aliados_de(Personaje) :-
+    setof(A, amigo(Personaje, A), Lista), !,
+    format('Aliados de ~w:~n', [Personaje]),
+    mostrar_lista(Lista).
+aliados_de(Personaje) :-
+    format('El personaje ~w no tiene aliados registrados.~n', [Personaje]).
 
-% tipo_fruta_de(Personaje, Tipo).
-tipo_fruta_de(Personaje, Tipo) :- fruta(_, Tipo, Personaje, ocupada).
+% enemigos_de(Personaje).
+enemigos_de(Personaje) :-
+    setof(E, enemigo(Personaje, E), Lista), !,
+    format('Enemigos de ~w:~n', [Personaje]),
+    mostrar_lista(Lista).
+enemigos_de(Personaje) :-
+    format('El personaje ~w no tiene enemigos registrados.~n', [Personaje]).
 
-% personajes_con_fruta_tipo(Tipo, Lista).
-personajes_con_fruta_tipo(Tipo, Lista) :-
-    setof(Personaje, fruta(_, Tipo, Personaje, ocupada), Lista).
+% familia_de(Personaje).
+familia_de(Personaje) :-
+    setof(E, familia(Personaje, E), Lista), !,
+    format('Familiares de ~w:~n', [Personaje]),
+    mostrar_lista(Lista).
+familia_de(Personaje) :-
+    format('El personaje ~w no tiene familiares registrados.~n', [Personaje]).
 
-% enemigos_mutuos(X, Y) :- ambos se tienen como enemigos.
-enemigos_mutuos(X, Y) :- enemigo(X, Y), enemigo(Y, X).
+miembros_de_organizacion(Org) :-
+    setof(Personaje, organizacion(Personaje, Org), Lista), !,
+    format('Miembros de la organización "~w":~n', [Org]),
+    mostrar_lista(Lista).
+miembros_de_organizacion(Org) :-
+    format('No se encontraron miembros registrados en la organización "~w".~n', [Org]).
 
-% enemigos_de_tripulacion(Tripulacion, Enemigos).
-enemigos_de_tripulacion(Trip, Lista) :-
-    setof(Enemigo, Miembro^(miembro_de(Miembro, Trip), enemigo(Miembro, Enemigo)), Lista).
 
-% aliados_de(Personaje, Lista).
-aliados_de(P, Lista) :-
-    setof(A, amigo(P, A), Lista), !.
-aliados_de(_, []).
+% Listar todos los rangos únicos disponibles
+rangos_disponibles(Rangos) :-
+    setof(Rango, Persona^rango(Persona, Rango), Rangos).
 
-% enemigos_de(Personaje, Lista).
-enemigos_de(P, Lista) :-
-    setof(E, enemigo(P, E), Lista), !.
-enemigos_de(_, []).
+% Mostrar opciones enumeradas con índice correcto
+mostrar_opciones(Lista) :-
+    mostrar_opciones(Lista, 1).
 
-% miembros_de_organizacion(Org, Lista).
-miembros_de_organizacion(Org, Lista) :-
-    setof(Persona, esta_en(Persona, Org), Lista).
+mostrar_opciones([], _).
+mostrar_opciones([H|T], N) :-
+    format('~d. ~w~n', [N, H]),
+    N1 is N + 1,
+    mostrar_opciones(T, N1).
 
-% personajes_con_rango(Rango, Lista).
-personajes_con_rango(Rango, Lista) :-
-    setof(P, tiene_rango(P, Rango), Lista).
 
-% visito_mas_de(Personaje, N) :- visitó más de N islas.
-visito_mas_de(Personaje, N) :-
-    setof(Isla, visito(Personaje, Isla), Lista),
-    length(Lista, Cant), Cant > N.
+% Menú interactivo para elegir rango y mostrar personajes
+menu_personajes_por_rango :-
+    rangos_disponibles(Rangos),
+    format('Rangos disponibles:~n'),
+    mostrar_opciones(Rangos),
+    write('Selecciona el número del rango para ver sus personajes: '),
+    read(Opcion),
+    nth1(Opcion, Rangos, RangoSeleccionado),
+    format('Personajes con rango "~w":~n', [RangoSeleccionado]),
+    personajes_por_rango(RangoSeleccionado).
 
-% ha_estado_en_misma_isla(X, Y) :- coincidieron en al menos una isla.
-ha_estado_en_misma_isla(X, Y) :-
-    visito(X, Isla), visito(Y, Isla), X \= Y.
+% Mostrar personajes que tienen ese rango
+personajes_por_rango(Rango) :-
+    setof(Personaje, rango(Personaje, Rango), Lista),
+    mostrar_lista(Lista).
 
-% personajes_en_evento(Evento, Lista).
-personajes_en_evento(Ev, Lista) :-
-    setof(P, participo_en(P, Ev), Lista).
+% Obtener todos los arcos disponibles
+arcos_disponibles(Arcos) :-
+    setof(Arco, Personaje^evento(Personaje, Arco), Arcos).
 
-% personajes_en_multiples_eventos(Personaje, ListaEventos).
-personajes_en_multiples_eventos(P, Lista) :-
-    setof(E, participo_en(P, E), Lista), length(Lista, L), L > 1.
+% Menú interactivo para seleccionar arco y mostrar personajes
+menu_personajes_por_evento :-
+    arcos_disponibles(Arcos),
+    format('Arcos disponibles:~n'),
+    mostrar_opciones(Arcos),
+    write('Selecciona el número del arco para ver sus personajes: '),
+    read(Opcion),
+    nth1(Opcion, Arcos, ArcoSeleccionado),
+    format('Personajes que participaron en "~w":~n', [ArcoSeleccionado]),
+    personajes_por_evento(ArcoSeleccionado).
 
-% personaje_muy_peligroso(P) :- recompensa alta + fruta logia o mitológica.
-personaje_muy_peligroso(P) :-
-    recompensa(P, R), R > 1000000000,
-    (fruta(_, logia, P, ocupada); fruta(_, mitologica, P, ocupada)).
+% Mostrar personajes que participaron en un arco
+personajes_por_evento(Arco) :-
+    setof(Personaje, evento(Personaje, Arco), Lista),
+    mostrar_lista(Lista).
 
-% puede_derrotar(P1, P2) :- recompensa de P1 es mayor y P1 tiene fruta.
-puede_derrotar(P1, P2) :-
-    recompensa(P1, R1), recompensa(P2, R2), R1 > R2,
-    fruta(_, _, P1, ocupada).
-
-% sin_tripulacion(Personaje).
-sin_tripulacion(P) :- personaje(P, _, _), \+ miembro_de(P, _).
-
-% sin_organizacion(Personaje).
-sin_organizacion(P) :- personaje(P, _, _), \+ esta_en(P, _).
-
-% personajes_muertos(Lista).
-personajes_muertos(Lista) :-
-    setof(P, personaje(P, muerto, _), Lista).
-
-% personajes_con_fruta(Lista).
-personajes_con_fruta(Lista) :-
-    setof(P, fruta(_, _, P, ocupada), Lista).
-
-% usuario_actual_de(Fruta, Usuario): devuelve el usuario si está ocupada.
-usuario_actual_de(F, U) :- fruta(F, _, U, ocupada).
-
-% fruta_heredada(F): la fruta la tuvo alguien que murió y ahora la tiene otro.
-fruta_heredada(F) :-
-    fruta(F, _, Antiguo, ocupada),
-    personaje(Antiguo, muerto, _),
-    fruta(F, _, Nuevo, ocupada),
-    personaje(Nuevo, vivo, _),
-    Antiguo \= Nuevo.
-
-% recompensa_mayor(P1, P2): P1 tiene más recompensa que P2.
-recompensa_mayor(P1, P2) :-
-    recompensa(P1, R1),
-    recompensa(P2, R2),
-    R1 > R2.
-
-yonkou_actuales(L) :-
-    setof(P, (esta_en(P, yonkou), personaje(P, vivo, _)), L).
-
-familiares_de(P, Lista) :-
-    setof(F, familia(P, F), Lista), !.
-familiares_de(_, []).
 
 % ==== PERSONAJE ====
-registrar_personaje :-
-    write('Nombre del personaje: '), read(N),
-    write('Estado (vivo/muerto): '), read(E),
-    write('Genero (masculino/femenino): '), read(G),
-    ( personaje(N, E, G) ->
-        format('El personaje ~w ya existe.~n', [N])
-    ; assertz(personaje(N, E, G)),
-      append('C:/Users/YaelG/OneDrive/Documentos/ESCUELA/SEMESTRE 8/ProLog/Proyecto_ProLog/personaje_guardado.pl'),
-      write(personaje(N, E, G)), write('.'), nl, nl,
-      told,
-      format('✔ Personaje ~w registrado y guardado en archivo.~n', [N])
+:- dynamic personaje/3.
+:- dynamic fruta/3.
+:- dynamic miembro_de/2.
+:- dynamic organizacion/2.
+:- dynamic rango/2.
+:- dynamic recompensa/2.
+
+registrar_personaje_completo :-
+    leer_nombre(Personaje),
+    elegir_estado(Estado),
+    elegir_genero(Genero),
+    (personaje(Personaje, Estado, Genero) ->
+        format('El personaje ~w ya existe.\n', [Personaje])
+    ; assertz(personaje(Personaje, Estado, Genero)),
+      guardar_hecho('personaje.pl', personaje(Personaje, Estado, Genero)),
+      format('✔ Personaje ~w registrado y guardado.\n', [Personaje]),
+      registrar_fruta(Personaje),
+      registrar_organizacion(Personaje),
+      preguntar_si_pirata(Personaje),
+      registrar_recompensa(Personaje)
+    ).
+
+preguntar_si_pirata(Personaje) :-
+    repeat,
+    write('¿El personaje es un pirata? (s/n): '), read(Rta),
+    (Rta = s ->
+        registrar_tripulacion(Personaje)
+    ; Rta = n -> true
+    ; writeln('Respuesta inválida.'), fail).
+
+
+leer_nombre(N) :-
+    write('Nombre del personaje (entre comillas dobles): '), read(N).
+
+elegir_estado(E) :-
+    repeat,
+    writeln('Selecciona estado:'),
+    writeln('1. vivo'),
+    writeln('2. muerto'),
+    write('Opción: '), read(Opc),
+    (Opc = 1 -> E = "vivo"; Opc = 2 -> E = "muerto"; writeln('Opción inválida.'), fail).
+
+elegir_genero(G) :-
+    repeat,
+    writeln('Selecciona género:'),
+    writeln('1. masculino'),
+    writeln('2. femenino'),
+    write('Opción: '), read(Opc),
+    (Opc = 1 -> G = "masculino"; Opc = 2 -> G = "femenino"; writeln('Opción inválida.'), fail).
+
+registrar_fruta(Personaje) :-
+    repeat,
+    write('¿El personaje tiene fruta del diablo? (s/n): '), read(Rta),
+    (Rta = s -> manejar_fruta(Personaje);
+     Rta = n -> true;
+     writeln('Respuesta inválida.'), fail).
+
+manejar_fruta(Personaje) :-
+    write('Nombre de la fruta (entre comillas dobles): '), read(F),
+    ( fruta_ocupada(F) ->
+        format('La fruta ~w ya está ocupada por un usuario vivo.\n', [F]),
+        write('¿Quieres registrar otra fruta? (s/n): '), read(R),
+        (R = s -> manejar_fruta(Personaje); R = n -> true; writeln('Respuesta inválida.'), manejar_fruta(Personaje))
+    ;   elegir_tipo_fruta(Tipo),
+        assertz(fruta(F, Tipo, Personaje)),
+        guardar_hecho('fruta.pl', fruta(F, Tipo, Personaje)),
+        format('✔ Fruta ~w de tipo ~w agregada para ~w.\n', [F, Tipo, Personaje])
+    ).
+
+elegir_tipo_fruta(T) :-
+    repeat,
+    writeln('Selecciona tipo de fruta:'),
+    writeln('1. logia'),
+    writeln('2. zoan'),
+    writeln('3. paramecia'),
+    writeln('4. mitologica'),
+    write('Opción: '), read(Opc),
+    (Opc = 1 -> T = "logia";
+     Opc = 2 -> T = "zoan";
+     Opc = 3 -> T = "paramecia";
+     Opc = 4 -> T = "mitologica";
+     writeln('Opción inválida.'), fail).
+
+registrar_organizacion(Personaje) :-
+    repeat,
+    write('¿El personaje pertenece a una organización? (s/n): '), read(Rta),
+    (   Rta = s ->
+        elegir_organizacion(Personaje),
+        !
+    ;   Rta = n ->
+        !
+    ;   writeln('Respuesta inválida, por favor ingresa s o n.'),
+        fail
+    ).
+
+elegir_organizacion(Personaje) :-
+    obtener_organizaciones(OrgListBase),
+    append(OrgListBase, ["otro"], OrgList),
+    mostrar_opciones(OrgList),
+    write('Selecciona organización (número): '), read(Opc),
+    length(OrgList, Len),
+    (   integer(Opc), Opc >= 1, Opc =< Len ->
+        nth1(Opc, OrgList, Org),
+        (   Org = "otro" ->
+            write('Ingrese el nombre de la organización (entre comillas dobles): '), read(NuevaOrg),
+            assertz(organizacion(Personaje, NuevaOrg)),
+            guardar_hecho('organizaciones.pl', organizacion(Personaje, NuevaOrg)),
+            format('✔ Organización ~w agregada y asignada a ~w.~n', [NuevaOrg, Personaje])
+        ;   assertz(organizacion(Personaje, Org)),
+            guardar_hecho('organizaciones.pl', organizacion(Personaje, Org)),
+            (Org = "marina" ->
+                registrar_rango(Personaje)
+            ; Org = "pirata" ->
+                registrar_tripulacion(Personaje)
+            ; true
+            ),
+            format('✔ ~w asignado a la organización ~w.~n', [Personaje, Org])
+        )
+    ;   writeln('Opción inválida.'), elegir_organizacion(Personaje)
     ).
 
 
+% Obtener lista base de organizaciones
+obtener_organizaciones(OrgList) :-
+    setof(O, P^organizacion(P, O), OrgList), !.
+obtener_organizaciones(["marina", "pirata", "shichibukai", "yonkou", "revolucionarios"]). % default
 
-eliminar_personaje :-
-    write('Nombre: '), read(N),
-    write('Estado: '), read(E),
-    write('Genero: '), read(G),
-    retract(personaje(N, E, G)),
-    write('❌ Personaje eliminado: '), write(N), nl.
 
-% ==== FRUTA DEL DIABLO ====
-insertar_fruta :-
-    write('Nombre de la fruta: '), read(N),
-    write('Tipo (logia/zoan/paramecia/mitologica): '), read(T),
-    write('Usuario actual (o nadie): '), read(U),
-    write('Estado (ocupada/libre): '), read(E),
-    assertz(fruta(N, T, U, E)),
-    write('✔ Fruta insertada: '), write(N), nl.
+registrar_rango(Personaje) :-
+    obtener_rangos(Rangos),
+    mostrar_opciones(Rangos),
+    write('Selecciona rango (número): '), read(Opc),
+    length(Rangos, Len),
+    (integer(Opc), Opc >= 1, Opc =< Len ->
+        nth1(Opc, Rangos, Rango),
+        assertz(rango(Personaje, Rango)),
+        guardar_hecho('rango.pl', rango(Personaje, Rango)),
+        format('✔ Rango ~w agregado para ~w.\n', [Rango, Personaje])
+    ; writeln('Opción inválida.'), registrar_rango(Personaje)).
 
-eliminar_fruta :-
-    write('Nombre: '), read(N),
-    write('Tipo: '), read(T),
-    write('Usuario: '), read(U),
-    write('Estado: '), read(E),
-    retract(fruta(N, T, U, E)),
-    write('❌ Fruta eliminada: '), write(N), nl.
+obtener_rangos(Rangos) :-
+    setof(R, P^rango(P, R), Rangos), !.
+obtener_rangos(["capitan", "vicealmirante", "almirante", "almirante jefe", "almirante de flota"]). % Default si no hay
 
-% ==== TRIPULACIÓN ====
-insertar_miembro :-
-    write('Personaje: '), read(P),
-    write('Tripulacion: '), read(T),
-    assertz(miembro_de(P, T)),
-    write('✔ Miembro agregado a la tripulación: '), write(T), nl.
+registrar_tripulacion(Personaje) :-
+    obtener_tripulaciones(TripListBase),
+    append(TripListBase, ["otro"], TripList),
+    mostrar_opciones(TripList),
+    write('Selecciona tripulación (número): '), read(Opc),
+    length(TripList, Len),
+    (integer(Opc), Opc >= 1, Opc =< Len ->
+        nth1(Opc, TripList, Trip),
+        (Trip = "otro" ->
+            write('Ingrese el nombre de la tripulación (entre comillas dobles): '), read(NuevaTrip),
+            assertz(miembro_de(Personaje, NuevaTrip)),
+            guardar_hecho('tripulacion.pl', miembro_de(Personaje, NuevaTrip)),
+            format('✔ Tripulación ~w agregada y asignada a ~w.~n', [NuevaTrip, Personaje])
+        ; assertz(miembro_de(Personaje, Trip)),
+          guardar_hecho('tripulacion.pl', miembro_de(Personaje, Trip)),
+          format('✔ ~w asignado a la tripulación ~w.~n', [Personaje, Trip])
+        )
+    ; writeln('Opción inválida.'), registrar_tripulacion(Personaje)
+    ).
 
-eliminar_miembro :-
-    write('Personaje: '), read(P),
-    write('Tripulacion: '), read(T),
-    retract(miembro_de(P, T)),
-    write('❌ Miembro eliminado de la tripulación: '), write(T), nl.
+% Obtener lista base de tripulaciones
+obtener_tripulaciones(TripList) :-
+    setof(T, P^miembro_de(P, T), TripList), !.
+obtener_tripulaciones(["Mugiwara", "Piratas Barba Blanca", "Piratas Barbanegra", "Bestias", "Piratas Big Mom"]). % default
 
-% ==== RELACIONES ====
-insertar_amigo :-
-    write('Personaje 1: '), read(P1),
-    write('Personaje 2: '), read(P2),
-    assertz(amigo(P1, P2)),
-    write('✔ Amistad registrada entre: '), write(P1), write(' y '), write(P2), nl.
+registrar_recompensa(Personaje) :-
+    repeat,
+    write('¿El personaje tiene recompensa? (s/n): '), read(Rta),
+    (Rta = s ->
+        write('Ingrese el valor de la recompensa (número entero): '), read(V),
+        assertz(recompensa(Personaje, V)),
+        guardar_hecho('recompensas.pl', recompensa(Personaje, V)),
+        format('✔ Recompensa de ~w agregada y guardada: ~w berries.\n', [Personaje, V])
+    ; Rta = n -> true
+    ; writeln('Respuesta inválida.'), fail).
 
-eliminar_amigo :-
-    write('Personaje 1: '), read(P1),
-    write('Personaje 2: '), read(P2),
-    retract(amigo(P1, P2)),
-    write('❌ Amistad eliminada entre: '), write(P1), write(' y '), write(P2), nl.
+% Guardar el hecho en archivo con comillas automáticas
+guardar_hecho(Archivo, Hecho) :-
+    open(Archivo, append, Stream),
+    writeq(Stream, Hecho),
+    write(Stream, '.'),
+    nl(Stream),        % Salto de línea después del punto
+    close(Stream).
 
-insertar_enemigo :-
-    write('Personaje 1: '), read(P1),
-    write('Personaje 2: '), read(P2),
-    assertz(enemigo(P1, P2)),
-    write('✔ Enemistad registrada entre: '), write(P1), write(' y '), write(P2), nl.
+% Mostrar opciones enumeradas con índice
+mostrar_opciones(Lista) :-
+    mostrar_opciones(Lista, 1).
 
-insertar_familia :-
-    write('Familiar 1: '), read(P1),
-    write('Familiar 2: '), read(P2),
-    assertz(familia(P1, P2)),
-    write('✔ Relación familiar registrada entre: '), write(P1), write(' y '), write(P2), nl.
+mostrar_opciones([], _).
+mostrar_opciones([H|T], N) :-
+    format('~d. ~w~n', [N, H]),
+    N1 is N + 1,
+    mostrar_opciones(T, N1).
 
-eliminar_familia :-
-    write('Familiar 1: '), read(P1),
-    write('Familiar 2: '), read(P2),
-    retract(familia(P1, P2)),
-    write('❌ Relación familiar eliminada entre: '), write(P1), write(' y '), write(P2), nl.
+% ==== Eliminación completa de un personaje y reescritura de archivos ====
+
+eliminar_personaje(Personaje) :-
+    retractall(personaje(Personaje, _, _)),
+    retractall(fruta(_, _, Personaje)),
+    retractall(organizacion(Personaje, _)),
+    retractall(rango(Personaje, _)),
+    retractall(miembro_de(Personaje, _)),
+    retractall(recompensa(Personaje, _)),
+    retractall(amigo(Personaje, _)),
+    retractall(amigo(_, Personaje)),
+    retractall(enemigo(Personaje, _)),
+    retractall(enemigo(_, Personaje)),
+    retractall(familia(Personaje, _)),
+    retractall(familia(_, Personaje)),
+    retractall(evento(Personaje, _)),
+    guardar_todos_los_archivos.
+
+% ==== Guardar todos los hechos en archivos ====
+
+guardar_todos_los_archivos :-
+    guardar_hechos(personaje, 3, 'personaje.pl'),
+    guardar_hechos(fruta, 3, 'fruta.pl'),
+    guardar_hechos(organizacion, 2, 'organizaciones.pl'),
+    guardar_hechos(rango, 2, 'rango.pl'),
+    guardar_hechos(miembro_de, 2, 'tripulacion.pl'),
+    guardar_hechos(recompensa, 2, 'recompensas.pl'),
+    guardar_hechos_multiples([amigo, enemigo, familia], 2, 'relaciones.pl'),
+    guardar_hechos(evento, 2, 'eventos.pl').
+
+
+guardar_hechos_multiples(Preds, Aridad, Archivo) :-
+    open(Archivo, write, Stream),
+    guardar_predicados_en_stream(Preds, Aridad, Stream),
+    close(Stream).
+
+guardar_predicados_en_stream([], _, _).
+guardar_predicados_en_stream([Pred|T], Aridad, Stream) :-
+    functor(Termino, Pred, Aridad),
+    forall(clause(Termino, true),
+           (writeq(Stream, Termino), write(Stream, '.'), nl(Stream))),
+    guardar_predicados_en_stream(T, Aridad, Stream).
+
+% ==== Guardar hechos de cualquier aridad ====
+
+guardar_hechos(Predicado, Aridad, Archivo) :-
+    functor(Termino, Predicado, Aridad),
+    open(Archivo, write, Stream),
+    forall(clause(Termino, true),
+           (writeq(Stream, Termino), write(Stream, '.'), nl(Stream))),
+    close(Stream).
+
+
+
+
+
+
