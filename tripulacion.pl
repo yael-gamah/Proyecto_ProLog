@@ -23,7 +23,7 @@ miembro_de("Whitebeard", "Piratas Barba Blanca").
 % Piratas Barbanegra
 miembro_de("Marshall D. Teach", "Piratas Barbanegra").
 miembro_de("Shiliew", "Piratas Barbanegra").
-organizacion("Kuzan", "Piratas Barbanegra").
+miembro_de("Kuzan", "Piratas Barbanegra").
 
 % Bestias
 miembro_de("Kaido", "Bestias").

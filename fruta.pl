@@ -6,6 +6,7 @@ fruta("Hito Hito no Mi", "zoan", "Tony Tony Chopper").
 fruta("Hana Hana no Mi", "paramecia", "Nico Robin").
 fruta("Yomi Yomi no Mi", "paramecia", "Brook").
 fruta("Mera Mera no Mi", "logia", "Sabo").
+fruta("Mera Mera no Mi", "logia", "Portgas D. Ace").
 fruta("Yami Yami no Mi", "logia", "Marshall D. Teach").
 fruta("Gura Gura no Mi", "paramecia", "Marshall D. Teach").
 fruta("Magu Magu no Mi", "logia", "Sakazuki").

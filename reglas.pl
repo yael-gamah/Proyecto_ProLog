@@ -8,27 +8,71 @@
 :- dynamic esta_en/2.
 :- dynamic tiene_rango/2.
 
+:- discontiguous fruta_libre/1.
 
-% tiene_rango(Personaje, Rango).
-tiene_rango(garp, vicealmirante).
-tiene_rango(sengoku, almirante).
-tiene_rango(akainu, almirante_jefe).
-tiene_rango(kizaru, almirante).
-tiene_rango(aokiji, almirante).
-tiene_rango(smoker, vicealmirante).
-tiene_rango(koby, capitan).
+personaje_fuerte(Personaje) :-
+    (   recompensa(Personaje, R) ->                % Si tiene recompensa
+        (   R > 1000000000 ->
+            format('El personaje ~w es muy fuerte con recompensa de ~w berries.~n', [Personaje, R])
+        ;   format('El personaje ~w tiene una recompensa de ~w berries, no es considerado muy fuerte.~n', [Personaje, R])
+        )
+    ;   format('El personaje ~w no tiene recompensa registrada.~n', [Personaje])
+    ).
 
-% personaje_fuerte(X) :- recompensa(X, R), R > 1000000000.
-personaje_fuerte(X) :- recompensa(X, R), R > 1000000000.
 
-% rival(X, Y) :- enemigo(X, Y), enemigo(Y, X).
-rival(X, Y) :- enemigo(X, Y), enemigo(Y, X).
 
-% sin_fruta(X) :- personaje(X, _, _), \+ fruta(_, _, X, _).
-sin_fruta(X) :- personaje(X, _, _), \+ fruta(_, _, X, _).
+tiene_fruta(Personaje) :-
+    (   personaje(Personaje, Estado, _) ->
+        (   fruta(Fruta, _, Personaje) ->
+            ( Estado = "vivo" ->
+                format('El personaje ~w tiene la fruta del diablo: ~w.~n', [Personaje, Fruta])
+            ; Estado = "muerto" ->
+                format('El personaje ~w tenía la fruta del diablo: ~w.~n', [Personaje, Fruta])
+            )
+        ;   ( Estado = "muerto" ->
+                format('El personaje ~w no tenía fruta del diablo.~n', [Personaje])
+            ; Estado = "vivo" ->
+                format('El personaje ~w NO tiene fruta del diablo.~n', [Personaje])
+            )
+        )
+    ;   format('El personaje ~w NO está registrado en la base de datos.~n', [Personaje])
+    ).
 
-% fruta_ocupada(NombreFruta) :- tiene dueño actualmente.
-fruta_ocupada(Fruta) :- fruta(Fruta, _, Usuario, ocupada), personaje(Usuario, _, _).
+
+
+fruta_ocupada(Fruta) :-
+    fruta(Fruta, _, Usuario),
+    personaje(Usuario, "vivo", _).
+
+fruta_libre(Fruta) :-
+    fruta(Fruta, _, _),           % Existe la fruta
+    \+ fruta_ocupada(Fruta).      % No hay usuario vivo
+
+frutas_ocupadas(Fruta) :-
+    fruta(Fruta, _, Usuario),
+    fruta_ocupada(Fruta).
+
+frutas_libres(Fruta) :-
+    fruta(Fruta, _, Usuario),
+    fruta_libre(Fruta).
+
+lista_frutas_ocupadas(L):-
+    setof(Fruta, frutas_ocupadas(Fruta), L).
+
+lista_frutas_libres(L):-
+    setof(Fruta, frutas_libres(Fruta), L).
+
+mostrar_lista([H|T]) :-
+    format('F = ~w~n', [H]),
+    mostrar_lista(T).
+
+mostrar_frutas_ocupadas :-
+    lista_frutas_ocupadas(Lista),
+    mostrar_lista(Lista).
+
+mostrar_frutas_libres :-
+    lista_frutas_libres(Lista),
+    mostrar_lista(Lista).
 
 % fruta_libre(NombreFruta).
 fruta_libre(Fruta) :- fruta(Fruta, _, _, libre).

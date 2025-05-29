@@ -211,6 +211,7 @@ evento("Brook", "Egghead").
 evento("Jinbe", "Fish-Man Island").
 evento("Jinbe", "Whole Cake Island").
 evento("Jinbe", "Wano Country").
+evento("Jinbe", "Egghead").
 
 % Ace
 evento("Portgas D. Ace", "Drum Island").
