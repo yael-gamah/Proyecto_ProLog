@@ -30,8 +30,8 @@ guardar_hecho(Archivo, Hecho) :-
     writeq(Stream, Hecho), write(Stream, '.'), nl(Stream),
     close(Stream).
 
-guardar_hechos(Regla, Aridad, Archivo) :-
-    functor(Term, Regla, Aridad),
+guardar_hechos(Hecho, Aridad, Archivo) :-
+    functor(Term, Hecho, Aridad),
     open(Archivo, write, Stream),
     forall(clause(Term, true),
            (writeq(Stream, Term), write(Stream, '.'), nl(Stream))),
@@ -39,15 +39,15 @@ guardar_hechos(Regla, Aridad, Archivo) :-
 
 guardar_hechos_multiples(Preds, Aridad, Archivo) :-
     open(Archivo, write, Stream),
-    guardar_reglas_en_stream(Preds, Aridad, Stream),
+    guardar_hechos_en_stream(Preds, Aridad, Stream),
     close(Stream).
 
-guardar_reglas_en_stream([], _, _).
-guardar_reglas_en_stream([Pred|T], Aridad, Stream) :-
+guardar_hechos_en_stream([], _, _).
+guardar_hechos_en_stream([Pred|T], Aridad, Stream) :-
     functor(Term, Pred, Aridad),
     forall(clause(Term, true),
            (writeq(Stream, Term), write(Stream, '.'), nl(Stream))),
-    guardar_reglas_en_stream(T, Aridad, Stream).
+    guardar_hechos_en_stream(T, Aridad, Stream).
 
 guardar_todos_los_archivos :-
     guardar_hechos(personaje, 3, 'personaje.pl'),
@@ -131,7 +131,7 @@ registrar_personaje_completo :-
         format('El personaje ~w ya está registrado.~n', [Personaje]), !
     ; assertz(personaje(Personaje, Estado, Genero)),
       guardar_hecho('personaje.pl', personaje(Personaje, Estado, Genero)),
-      format('✔ Personaje ~w registrado.~n', [Personaje]),
+      format('Personaje ~w registrado.~n', [Personaje]),
       preguntar_fruta(Personaje),
       preguntar_organizacion(Personaje),
       preguntar_si_pirata(Personaje),
@@ -178,7 +178,7 @@ registrar_fruta(Personaje) :-
     ; elegir_tipo_fruta(Tipo),
       assertz(fruta(Fruta, Tipo, Personaje)),
       guardar_hecho('fruta.pl', fruta(Fruta, Tipo, Personaje)),
-      format('✔ Fruta ~w registrada para ~w.~n', [Fruta, Personaje])
+      format('Fruta ~w registrada para ~w.~n', [Fruta, Personaje])
     ).
 
 elegir_tipo_fruta(Tipo) :-
@@ -210,7 +210,7 @@ seleccionar_organizacion(Personaje) :-
     ; OrgFinal = Org),
     assertz(organizacion(Personaje, OrgFinal)),
     guardar_hecho('organizaciones.pl', organizacion(Personaje, OrgFinal)),
-    format('✔ Organización ~w asignada a ~w.~n', [OrgFinal, Personaje]),
+    format('Organización ~w asignada a ~w.~n', [OrgFinal, Personaje]),
     (OrgFinal = "marina" -> seleccionar_rango(Personaje); true).
 
 obtener_organizaciones(Lista) :-
@@ -224,7 +224,7 @@ seleccionar_rango(Personaje) :-
     nth1(Opc, Base, Rango),
     assertz(rango(Personaje, Rango)),
     guardar_hecho('rango.pl', rango(Personaje, Rango)),
-    format('✔ Rango ~w asignado a ~w.~n', [Rango, Personaje]).
+    format('Rango ~w asignado a ~w.~n', [Rango, Personaje]).
 
 obtener_rangos(Rangos) :-
     setof(R, P^rango(P, R), Rangos), !.
@@ -248,7 +248,7 @@ seleccionar_tripulacion(Personaje) :-
     ; TripFinal = Trip),
     assertz(miembro_de(Personaje, TripFinal)),
     guardar_hecho('tripulacion.pl', miembro_de(Personaje, TripFinal)),
-    format('✔ Tripulación ~w asignada a ~w.~n', [TripFinal, Personaje]).
+    format('Tripulación ~w asignada a ~w.~n', [TripFinal, Personaje]).
 
 obtener_tripulaciones(Lista) :-
     setof(T, P^miembro_de(P, T), Lista), !.
@@ -320,7 +320,7 @@ ejecutar_opcion(10) :- relacionar_personajes.
 ejecutar_opcion(11) :- 
     write('Nombre del personaje a eliminar: '), read(P),
     eliminar_personaje(P),
-    format('✔ Personaje ~w eliminado de todos los registros.~n', [P]).
+    format('Personaje ~w eliminado de todos los registros.~n', [P]).
 ejecutar_opcion(0) :- writeln('Saliendo del sistema...').
 ejecutar_opcion(_) :- writeln('Opción no válida, intente de nuevo.'), fail.
 
@@ -349,7 +349,7 @@ relacionar_personajes :-
     writeln('3. Familiar'),
     write('Opción: '), read(Op),
     asignar_relacion(Op, P1, P2),
-    format('✔ Relación registrada entre ~w y ~w.~n', [P1, P2]).
+    format('Relación registrada entre ~w y ~w.~n', [P1, P2]).
 
 % Obtener todos los personajes únicos
 obtener_personajes(Lista) :-
