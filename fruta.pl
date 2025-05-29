@@ -17,5 +17,5 @@ fruta("Hito Hito no Mi, Modelo Nika","mitologica","Monkey D. Luffy").
 fruta("Moku Moku no Mi","logia","Smoker").
 fruta("Bari Bari no Mi","paramecia","Bartolomeo").
 fruta("Gasu Gasu no Mi","logia","Caesar Clown").
-fruta("Tori Tori no Mi, Modelo Fénix","mitologica","Marco").
+fruta("Tori Tori no Mi, Modelo FÃ©nix","mitologica","Marco").
 fruta("Bara Bara no Mi","paramecia","Buggy").

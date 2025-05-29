@@ -30,8 +30,8 @@ guardar_hecho(Archivo, Hecho) :-
     writeq(Stream, Hecho), write(Stream, '.'), nl(Stream),
     close(Stream).
 
-guardar_hechos(Predicado, Aridad, Archivo) :-
-    functor(Term, Predicado, Aridad),
+guardar_hechos(Regla, Aridad, Archivo) :-
+    functor(Term, Regla, Aridad),
     open(Archivo, write, Stream),
     forall(clause(Term, true),
            (writeq(Stream, Term), write(Stream, '.'), nl(Stream))),
@@ -39,15 +39,15 @@ guardar_hechos(Predicado, Aridad, Archivo) :-
 
 guardar_hechos_multiples(Preds, Aridad, Archivo) :-
     open(Archivo, write, Stream),
-    guardar_predicados_en_stream(Preds, Aridad, Stream),
+    guardar_reglas_en_stream(Preds, Aridad, Stream),
     close(Stream).
 
-guardar_predicados_en_stream([], _, _).
-guardar_predicados_en_stream([Pred|T], Aridad, Stream) :-
+guardar_reglas_en_stream([], _, _).
+guardar_reglas_en_stream([Pred|T], Aridad, Stream) :-
     functor(Term, Pred, Aridad),
     forall(clause(Term, true),
            (writeq(Stream, Term), write(Stream, '.'), nl(Stream))),
-    guardar_predicados_en_stream(T, Aridad, Stream).
+    guardar_reglas_en_stream(T, Aridad, Stream).
 
 guardar_todos_los_archivos :-
     guardar_hechos(personaje, 3, 'personaje.pl'),
@@ -128,14 +128,14 @@ registrar_personaje_completo :-
     elegir_estado(Estado),
     elegir_genero(Genero),
     (personaje(Personaje, _, _) ->
-        format('El personaje ~w ya está registrado.~n', [Personaje])
+        format('El personaje ~w ya está registrado.~n', [Personaje]), !
     ; assertz(personaje(Personaje, Estado, Genero)),
       guardar_hecho('personaje.pl', personaje(Personaje, Estado, Genero)),
       format('✔ Personaje ~w registrado.~n', [Personaje]),
       preguntar_fruta(Personaje),
       preguntar_organizacion(Personaje),
       preguntar_si_pirata(Personaje),
-      preguntar_recompensa(Personaje)
+      preguntar_recompensa(Personaje), !
     ).
 
 leer_nombre(Nombre) :-
@@ -280,3 +280,93 @@ eliminar_personaje(P) :-
     retractall(familia(P, _)), retractall(familia(_, P)),
     retractall(evento(P, _)),
     guardar_todos_los_archivos.
+
+% === Menú principal del sistema ===
+
+menu :-
+    repeat,
+    nl, writeln('==== SISTEMA EXPERTO DE ONE PIECE ===='), nl,
+    writeln('1. Registrar nuevo personaje'),
+    writeln('2. Mostrar frutas ocupadas'),
+    writeln('3. Mostrar frutas libres'),
+    writeln('4. Ver aliados de un personaje'),
+    writeln('5. Ver enemigos de un personaje'),
+    writeln('6. Ver familiares de un personaje'),
+    writeln('7. Ver miembros de una organización'),
+    writeln('8. Ver personajes por rango'),
+    writeln('9. Ver personajes por arco'),
+    writeln('10. Relacionar personajes'),
+    writeln('11. Eliminar personaje'),
+    writeln('0. Salir'),
+    nl,
+    write('Seleccione una opción: '), read(Opcion),
+    ejecutar_opcion(Opcion),
+    Opcion = 0, !.
+
+% === Ejecutar opción seleccionada ===
+
+ejecutar_opcion(1) :- registrar_personaje_completo.
+ejecutar_opcion(2) :- mostrar_frutas_ocupadas.
+ejecutar_opcion(3) :- mostrar_frutas_libres.
+ejecutar_opcion(4) :- pedir_personaje(aliados_de).
+ejecutar_opcion(5) :- pedir_personaje(enemigos_de).
+ejecutar_opcion(6) :- pedir_personaje(familia_de).
+ejecutar_opcion(7) :- 
+    write('Nombre de la organización: '), read(Org),
+    miembros_de_organizacion(Org).
+ejecutar_opcion(8) :- menu_personajes_por_rango.
+ejecutar_opcion(9) :- menu_personajes_por_evento.
+ejecutar_opcion(10) :- relacionar_personajes.
+ejecutar_opcion(11) :- 
+    write('Nombre del personaje a eliminar: '), read(P),
+    eliminar_personaje(P),
+    format('✔ Personaje ~w eliminado de todos los registros.~n', [P]).
+ejecutar_opcion(0) :- writeln('Saliendo del sistema...').
+ejecutar_opcion(_) :- writeln('Opción no válida, intente de nuevo.'), fail.
+
+% === Auxiliar para preguntar por personaje ===
+
+pedir_personaje(Regla) :-
+    write('Nombre del personaje: '), read(Personaje),
+    call(Regla, Personaje).
+
+% === Relacionar personajes ===
+
+relacionar_personajes :-
+    obtener_personajes(Lista),
+    mostrar_opciones(Lista),
+    write('Selecciona el número del primer personaje: '), read(Idx1),
+    nth1(Idx1, Lista, P1),
+
+    excluir_elemento(P1, Lista, Lista2),
+    mostrar_opciones(Lista2),
+    write('Selecciona el número del segundo personaje: '), read(Idx2),
+    nth1(Idx2, Lista2, P2),
+
+    writeln('Selecciona el tipo de relación:'),
+    writeln('1. Amigo'),
+    writeln('2. Enemigo'),
+    writeln('3. Familiar'),
+    write('Opción: '), read(Op),
+    asignar_relacion(Op, P1, P2),
+    format('✔ Relación registrada entre ~w y ~w.~n', [P1, P2]).
+
+% Obtener todos los personajes únicos
+obtener_personajes(Lista) :-
+    setof(N, E^G^personaje(N, E, G), Lista).
+
+% Excluir un elemento de la lista
+excluir_elemento(X, Lista, SinX) :- delete(Lista, X, SinX).
+
+% Asignar la relación
+asignar_relacion(1, A, B) :-
+    assertz(amigo(A, B)),
+    guardar_hecho('relaciones.pl', amigo(A, B)).
+asignar_relacion(2, A, B) :-
+    assertz(enemigo(A, B)),
+    guardar_hecho('relaciones.pl', enemigo(A, B)).
+asignar_relacion(3, A, B) :-
+    assertz(familia(A, B)),
+    guardar_hecho('relaciones.pl', familia(A, B)).
+asignar_relacion(_, _, _) :-
+    writeln('Opción no válida. Relación no registrada.'), fail.

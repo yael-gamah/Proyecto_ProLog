@@ -72,3 +72,4 @@ familia("Kawamatsu","Oden Kozuki").
 familia("Komurasaki","Oden Kozuki").
 familia("Hiyori Kozuki","Kin'emon").
 familia("Donquixote Rosinante","Donquixote Doflamingo").
+familia("Sabo","Monkey D. Luffy").

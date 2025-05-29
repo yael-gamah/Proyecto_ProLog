@@ -10,9 +10,9 @@ organizacion("Sentomaru","Marina").
 organizacion("Shiliew","Marina").
 organizacion("Magellan","Marina").
 organizacion("Donquixote Rosinante","Marina").
-organizacion("Sabo","Ejército Revolucionario").
-organizacion("Koala","Ejército Revolucionario").
-organizacion("Bartholomew Kuma","Ejército Revolucionario").
+organizacion("Sabo","EjÃ©rcito Revolucionario").
+organizacion("Koala","EjÃ©rcito Revolucionario").
+organizacion("Bartholomew Kuma","EjÃ©rcito Revolucionario").
 organizacion("Vinsmoke Reiju","Germa 66").
 organizacion("Vinsmoke Ichiji","Germa 66").
 organizacion("Vinsmoke Niji","Germa 66").
